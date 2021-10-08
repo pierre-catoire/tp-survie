@@ -1,9 +1,9 @@
 ---
-title: "Consignes"
+title: Consignes
 author: "Pierre Catoire"
 ---
 
-#Consignes pour le TP Analyse de données de survie (STA205)
+# Consignes pour le TP Analyse de données de survie (STA205)
 
 Rendu :
 - un texte au format article
