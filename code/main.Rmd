@@ -44,7 +44,7 @@ Variables explicatives mesurées à l'inclusion dans l'étude :
 - Sodium : natrémie, concentration de sodium dans le plasma en mmol/L
 - Creat : la clairance rénale de la créatinine en mL/s (peut être dichotomisée en ≤ 1,5 mL/s , seuil d’une insuffisance rénale oui ou non)
 - Creatk : la créatine kinase en UI/L.
-
+  
 ```{r head_summary_df, echo=TRUE}
 #Visualisation des premières lignes et synthèse des variables
 head(df)
