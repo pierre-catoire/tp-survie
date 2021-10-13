@@ -30,4 +30,4 @@ author:
   -  nettoyage des données, valeurs manquantes ...
   -  recodage
   -  
-A line from Rstudio
+A line from Rstudio edited !
