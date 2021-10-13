@@ -29,3 +29,6 @@ author:
 - Etapes du code :
   -  nettoyage des données, valeurs manquantes ...
   -  recodage
+  
+  
+  Rajouter une nouvelle ligne
