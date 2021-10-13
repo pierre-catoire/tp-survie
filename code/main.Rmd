@@ -46,6 +46,10 @@ Variables explicatives mesurées à l'inclusion dans l'étude :
 - Creatk : la créatine kinase en UI/L.
 
 ```{r head_summary_df, echo=TRUE}
+#Visualisation des premières lignes et synthèse des variables
 head(df)
 summary(df)
+
+#Vérification de l'absence de valeurs manquantes
+nrow(df[is.na(df),])
 ```
