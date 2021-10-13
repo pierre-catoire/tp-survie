@@ -25,9 +25,7 @@ author:
 
 ## Méthodologie
 
-- rendu via RMarkdown (ou Sweave ?)
+- rendu via RMarkdown (ou Sweave ?) 
 - Etapes du code :
   -  nettoyage des données, valeurs manquantes ...
   -  recodage
-  -  
-A line from Rstudio edited !
