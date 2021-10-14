@@ -55,8 +55,28 @@ summary(df)
 nrow(df[is.na(df),])
 ```
 
+## Estimateur de Kaplan-Meier
+
 ```{r km, echo=TRUE}
 #Création d'un estimateur de Kaplan-Meier : délai = temps, indicateur d'événement = décès
 km1 = survfit(Surv(data$temps,data$dc)~1,data=data)
 plot(km1)
 ```
+
+## Modèle de Cox
+
+```{r cox, echo=TRUE}
+#Estimation d'un modèle de Cox
+cox = coxph(Surv(temps,dc) ~
+              Age
+            + Sodium
+            + sexe
+            + tabac
+            + hta
+            + diabete
+            + anemie
+            + fraction
+            + creat
+            + creatk,
+            data=df)
+ ```
