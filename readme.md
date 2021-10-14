@@ -1,6 +1,8 @@
 ---
-title: Readme
+title: "Readme"
 author:
+  - Alexandre Kaci
+  - Thao Uyên Vu
   - Pierre Catoire
 ---
 
