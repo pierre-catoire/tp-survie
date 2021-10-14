@@ -12,6 +12,8 @@ author:
 
 ## Ressources
 
+- polycopié : Analyse de données de survie avec R 📑
+- https://rviews.rstudio.com/2017/09/25/survival-analysis-with-r/
 - https://bookdown.org/sestelo/sa_financial/
 - https://cran.r-project.org/web/packages/survival/vignettes/timedep.pdf
 
