@@ -10,6 +10,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(survival)
 ```
 
 ## Objectif de l'étude
@@ -52,4 +53,10 @@ summary(df)
 
 #Vérification de l'absence de valeurs manquantes
 nrow(df[is.na(df),])
+```
+
+```{r km, echo=TRUE}
+#Création d'un estimateur de Kaplan-Meier : délai = temps, indicateur d'événement = décès
+km1 = survfit(Surv(data$temps,data$dc)~1,data=data)
+plot(km1)
 ```
