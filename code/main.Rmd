@@ -212,9 +212,25 @@ survdiff(Surv(TEMPS,DC)~FRACTIONCAT,data=df)
 
 On en conclut qu'il existe une différence significative des fonctions de survie entre les groupes de fraction d'éjection.
 
+Néanmoins cette estimation n'est pas ajustée sur les autres facteurs. Pour prendre en compte l'effet de différentes variables explicatives, on propose l'utilisation d'un modèle semi-paramétrique de Cox.
+
 ## Modèle de Cox
 
 ```{r cox, echo=TRUE}
-#Estimation d'un modèle de Cox
+#Estimation d'un modèle de Cox. Résolution des ex-aequo par méthode exacte.
+cox = coxph(Surv(TEMPS,DC)~
+        FRACTIONCAT
+      + AGE
+      + SODIUM
+      + SEXE
+      + TABAC
+      + HTA
+      + DIABETE
+      + ANEMIE
+      + IR
+      + CREATK,
+      data=df,
+      ties = "exact")
 
+summary(cox)
  ```

@@ -501,11 +501,64 @@ ggsurv(km2,
 ## 
 ##  Chisq= 31.1  on 2 degrees of freedom, p= 2e-07</code></pre>
 <p>On en conclut qu’il existe une différence significative des fonctions de survie entre les groupes de fraction d’éjection.</p>
+<p>Néanmoins cette estimation n’est pas ajustée sur les autres facteurs. Pour prendre en compte l’effet de différentes variables explicatives, on propose l’utilisation d’un modèle semi-paramétrique de Cox.</p>
 </div>
 </div>
 <div id="modèle-de-cox" class="section level2">
 <h2>Modèle de Cox</h2>
-<pre class="r"><code>#Estimation d&#39;un modèle de Cox</code></pre>
+<pre class="r"><code>#Estimation d&#39;un modèle de Cox. Résolution des ex-aequo par méthode exacte.
+cox = coxph(Surv(TEMPS,DC)~
+        FRACTIONCAT
+      + AGE
+      + SODIUM
+      + SEXE
+      + TABAC
+      + HTA
+      + DIABETE
+      + ANEMIE
+      + IR
+      + CREATK,
+      data=df,
+      ties = &quot;exact&quot;)
+
+summary(cox)</code></pre>
+<pre><code>## Call:
+## coxph(formula = Surv(TEMPS, DC) ~ FRACTIONCAT + AGE + SODIUM + 
+##     SEXE + TABAC + HTA + DIABETE + ANEMIE + IR + CREATK, data = df, 
+##     ties = &quot;exact&quot;)
+## 
+##   n= 299, number of events= 96 
+## 
+##                   coef  exp(coef)   se(coef)      z Pr(&gt;|z|)    
+## FRACTIONCAT -0.5838692  0.5577362  0.1692276 -3.450  0.00056 ***
+## AGE          0.0460501  1.0471268  0.0092852  4.960 7.07e-07 ***
+## SODIUM      -0.0408325  0.9599899  0.0225636 -1.810  0.07035 .  
+## SEXE         0.1918930  1.2115409  0.2402014  0.799  0.42436    
+## TABAC        0.1155334  1.1224720  0.2445441  0.472  0.63661    
+## HTA          0.5653455  1.7600557  0.2164220  2.612  0.00900 ** 
+## DIABETE      0.1562692  1.1691409  0.2241162  0.697  0.48563    
+## ANEMIE       0.4400106  1.5527236  0.2168617  2.029  0.04246 *  
+## IR          -0.9213007  0.3980010  0.2342112 -3.934 8.37e-05 ***
+## CREATK       0.0002598  1.0002598  0.0001023  2.539  0.01111 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##             exp(coef) exp(-coef) lower .95 upper .95
+## FRACTIONCAT    0.5577     1.7930    0.4003    0.7771
+## AGE            1.0471     0.9550    1.0282    1.0664
+## SODIUM         0.9600     1.0417    0.9185    1.0034
+## SEXE           1.2115     0.8254    0.7566    1.9400
+## TABAC          1.1225     0.8909    0.6951    1.8127
+## HTA            1.7601     0.5682    1.1516    2.6900
+## DIABETE        1.1691     0.8553    0.7535    1.8140
+## ANEMIE         1.5527     0.6440    1.0151    2.3751
+## IR             0.3980     2.5126    0.2515    0.6299
+## CREATK         1.0003     0.9997    1.0001    1.0005
+## 
+## Concordance= 0.731  (se = 0.025 )
+## Likelihood ratio test= 81.53  on 10 df,   p=3e-13
+## Wald test            = 80.38  on 10 df,   p=4e-13
+## Score (logrank) test = 85.84  on 10 df,   p=4e-14</code></pre>
 </div>
 
 
