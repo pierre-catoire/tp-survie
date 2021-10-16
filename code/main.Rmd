@@ -1,11 +1,13 @@
 ---
 title: "TP - Analyse de données de survie"
-author: 
-- "Thao Uyen Vu"
-- "Alexandre Kaci"
-- "Pierre Catoire"
+author:
+- Thao Uyen Vu
+- Alexandre Kaci
+- Pierre Catoire
 date: "13/10/2021"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -53,3 +55,8 @@ summary(df)
 #Vérification de l'absence de valeurs manquantes
 nrow(df[is.na(df),])
 ```
+
+## Définition des délais et événements
+
+L'événement d'intérêt est le décès.
+
