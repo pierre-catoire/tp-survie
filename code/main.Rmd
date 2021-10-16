@@ -12,6 +12,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(survival)
 ```
 
 ## Objectif de l'étude
@@ -34,15 +35,18 @@ Indicateurs d'événements et dates :
 - Temps : temps de suivi (jusqu’au décès ou de censure) 
 - DC : indicateur de décès (1= sujet décédé 0=sujet non décédé) 
 
-Variables explicatives mesurées à l'inclusion dans l'étude :
+Variable d'intérêt principale :
+
+- Fraction : la fraction d'éjection ventriculaire gauche (catégorisable en  ≤ 30, 30 < ≤ 45 et > 45),
+
+Variables d'ajustement (connues de la littérature, à justifier) :
 
 - Sexe : hommes=1 ; femmes=2
-- Tabac : 1 =fumeur, 0 = non fumeur
-- HTA : 0 = pas d’hypertension, 1= présence d’hypertension. 
-- Diabete : 0 =  pas de diabète, 1  = Diabète
-- Anémie : 1 = présence d’une anémie, 0 = pas d’anémie.
 - Age : âge en année
-- Fraction : la fraction d'éjection ventriculaire gauche (catégorisable en  ≤ 30, 30 < ≤ 45 et > 45),
+- Tabac : 1 =fumeur, 0 = non fumeur
+- Diabete : 0 =  pas de diabète, 1  = Diabète
+- HTA : 0 = pas d’hypertension, 1= présence d’hypertension. 
+- Anémie : 1 = présence d’une anémie, 0 = pas d’anémie.
 - Sodium : natrémie, concentration de sodium dans le plasma en mmol/L
 - Creat : la clairance rénale de la créatinine en mL/s (peut être dichotomisée en ≤ 1,5 mL/s , seuil d’une insuffisance rénale oui ou non)
 - Creatk : la créatine kinase en UI/L.
@@ -56,7 +60,35 @@ summary(df)
 nrow(df[is.na(df),])
 ```
 
+<<<<<<< HEAD
 ## Définition des délais et événements
 
 L'événement d'intérêt est le décès.
 
+=======
+## Estimateur de Kaplan-Meier
+
+```{r km, echo=TRUE}
+#Création d'un estimateur de Kaplan-Meier : délai = temps, indicateur d'événement = décès
+km1 = survfit(Surv(data$temps,data$dc)~1,data=data)
+plot(km1)
+```
+
+## Modèle de Cox
+
+```{r cox, echo=TRUE}
+#Estimation d'un modèle de Cox
+cox = coxph(Surv(temps,dc) ~
+              Age
+            + Sodium
+            + sexe
+            + tabac
+            + hta
+            + diabete
+            + anemie
+            + fraction
+            + creat
+            + creatk,
+            data=df)
+ ```
+>>>>>>> e00995241bc1c0389c4c1eb165d0b6b7ee21a820
