@@ -6,13 +6,35 @@ author:
 - Pierre Catoire
 date: "13/10/2021"
 output:
-  pdf_document: default
   html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(survival)
+library(kableExtra)
+
+#Crée une fonction qui à partir d'une variable et d'un type : quantitatif normal ou non,
+# renvoie :
+# - si la variable est qualitative ("ql"): l'effectif et le pourcentage
+# - si la variable est quantitative normale ("qtn"): la moyenne et l'écart-type
+# - si la variable est quantitative non normale ("qtnn"): la médiane et l'écart interquartile
+
+desc=function(var,type){
+  if(type=="qtn"){
+    rtn = c(round(mean(var),2),paste("±",round(sd(var),2),sep=""))
+  }
+  else if(type=="qtnn"){
+    rtn = c(median(var),paste("[",quantile(var,0.25),"-",quantile(var,0.75),"]"))
+  }
+  else if(type=="ql"){
+    rtn = c(nrow(var),paste(100*round(c(nrow(var)/nrow(df)),4)),"%",sep="")
+  }
+  else{
+    stop("Le type est mal spécifié")
+  }
+  return(rtn)
+}
 ```
 
 ## Objectif de l'étude
@@ -23,6 +45,24 @@ library(survival)
 
 ```{r import}
 df = read.delim("asset/projet3.txt")
+
+#Visualisation des premières lignes et synthèse des variables
+head(df)
+summary(df)
+
+#Vérification de l'absence de valeurs manquantes
+nrow(df[is.na(df),])
+
+#Mise en majuscule des noms de variables
+names(df) = toupper(names(df))
+
+#Conversion de la créatininémie en ml/min/m² (qui est l'unité internationale)
+df$DFG = 60*df$CREAT
+
+#Création d'une variable IR qui prend pour valeurs :
+# 0 si pas d'insuffisance rénale (DFG >= 90 ml/min)
+# 1 si insuffisance rénale (DFG < 90 mL/min)
+df$IR = ifelse(df$DFG < 90,1,0)
 ```
 
 ## Définition des variables
@@ -50,45 +90,65 @@ Variables d'ajustement (connues de la littérature, à justifier) :
 - Sodium : natrémie, concentration de sodium dans le plasma en mmol/L
 - Creat : la clairance rénale de la créatinine en mL/s (peut être dichotomisée en ≤ 1,5 mL/s , seuil d’une insuffisance rénale oui ou non)
 - Creatk : la créatine kinase en UI/L.
-  
-```{r head_summary_df, echo=TRUE}
-#Visualisation des premières lignes et synthèse des variables
-head(df)
-summary(df)
 
-#Vérification de l'absence de valeurs manquantes
-nrow(df[is.na(df),])
-```
-
-<<<<<<< HEAD
 ## Définition des délais et événements
 
 L'événement d'intérêt est le décès.
 
-=======
+## Analyse descriptive
+
+```{r}
+varnames = c("Âge (moyenne, écart-type)",
+             "Tabagisme (N,%)",
+             "Diabète (N,%)",
+             "Hypertension artérielle (N,%)",
+             "Anémie (N,%)",
+             "Natrémie (médiane, EIQ*)",
+             "Débit de Filtration Glomérulaire (mL/min) (médiane, EIQ*)",
+             "Insuffisance rénale (N,%)",
+             "Créatinine kinase (UI/L) (médiane, EIQ*)"
+             )
+
+c_pos = c(desc(df$AGE,"qtn")[1],
+          desc(df[df$TABAC==1,],"ql")[1],
+          desc(df[df$DIABETE==1,],"ql")[1],
+          desc(df[df$HTA==1,],"ql")[1],
+          desc(df[df$ANEMIE==1,],"ql")[1],
+          desc(df$SODIUM,"qtnn")[1],
+          desc(df$DFG,"qtnn")[1],
+          desc(df[df$IR==1,],"ql")[1],
+          desc(df$CREATK,"qtnn")[1])
+
+c_disp = c(desc(df$AGE,"qtn")[2],
+          desc(df[df$TABAC==1,],"ql")[2],
+          desc(df[df$DIABETE==1,],"ql")[2],
+          desc(df[df$HTA==1,],"ql")[2],
+          desc(df[df$ANEMIE==1,],"ql")[2],
+          desc(df$SODIUM,"qtnn")[2],
+          desc(df$DFG,"qtnn")[2],
+          desc(df[df$IR==1,],"ql")[2],
+          desc(df$CREATK,"qtnn")[2])
+
+desc_df = data.frame(varnames,c_pos,c_disp)
+
+kbl = kable(desc_df,
+            col.names = c("Variable","",""),
+            align = "lcc")
+kbl = kable_classic(kbl,full_width = T)
+footnote(kbl, general ="*Ecart inter-quartile")
+```
+
 ## Estimateur de Kaplan-Meier
 
 ```{r km, echo=TRUE}
 #Création d'un estimateur de Kaplan-Meier : délai = temps, indicateur d'événement = décès
-km1 = survfit(Surv(data$temps,data$dc)~1,data=data)
-plot(km1)
+#km1 = survfit(Surv(data$temps,data$dc)~1,data=data)
+#plot(km1)
 ```
 
 ## Modèle de Cox
 
 ```{r cox, echo=TRUE}
 #Estimation d'un modèle de Cox
-cox = coxph(Surv(temps,dc) ~
-              Age
-            + Sodium
-            + sexe
-            + tabac
-            + hta
-            + diabete
-            + anemie
-            + fraction
-            + creat
-            + creatk,
-            data=df)
+
  ```
->>>>>>> e00995241bc1c0389c4c1eb165d0b6b7ee21a820
