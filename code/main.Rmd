@@ -202,6 +202,16 @@ ggsurv(km2,
 
 ?? Utilisation des intervalles de confiance de Rothman, comme proposé dans le polycopié ?
 
+### Test de l'homogénéité des courbes de survie
+
+On utilise un test du log-rank pour tester l'homogénéité des fonctions de survie entre les groupes de fraction d'éjection :
+
+```{r logrank, echo=TRUE}
+survdiff(Surv(TEMPS,DC)~FRACTIONCAT,data=df)
+```
+
+On en conclut qu'il existe une différence significative des fonctions de survie entre les groupes de fraction d'éjection.
+
 ## Modèle de Cox
 
 ```{r cox, echo=TRUE}

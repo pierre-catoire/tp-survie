@@ -487,6 +487,21 @@ ggsurv(km2,
 <p>?? Intérêt d’un estimateur de Nelson-Aalen ?</p>
 <p>?? Utilisation des intervalles de confiance de Rothman, comme proposé dans le polycopié ?</p>
 </div>
+<div id="test-de-lhomogénéité-des-courbes-de-survie" class="section level3">
+<h3>Test de l’homogénéité des courbes de survie</h3>
+<p>On utilise un test du log-rank pour tester l’homogénéité des fonctions de survie entre les groupes de fraction d’éjection :</p>
+<pre class="r"><code>survdiff(Surv(TEMPS,DC)~FRACTIONCAT,data=df)</code></pre>
+<pre><code>## Call:
+## survdiff(formula = Surv(TEMPS, DC) ~ FRACTIONCAT, data = df)
+## 
+##                 N Observed Expected (O-E)^2/E (O-E)^2/V
+## FRACTIONCAT=0  93       51     26.8     21.93     30.63
+## FRACTIONCAT=1 146       31     51.2      7.97     17.32
+## FRACTIONCAT=2  60       14     18.0      0.90      1.12
+## 
+##  Chisq= 31.1  on 2 degrees of freedom, p= 2e-07</code></pre>
+<p>On en conclut qu’il existe une différence significative des fonctions de survie entre les groupes de fraction d’éjection.</p>
+</div>
 </div>
 <div id="modèle-de-cox" class="section level2">
 <h2>Modèle de Cox</h2>
