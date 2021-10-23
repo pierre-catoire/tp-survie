@@ -1,0 +1,254 @@
+---
+title: "cox"
+author: "ak"
+date: "23/10/2021"
+output: html_document
+---
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+setwd(dir = "C:/Users/kacia/Documents/M2/sta205")
+df <- read.delim("projet3.txt",header=TRUE)
+```
+
+
+```{r setup, include=FALSE}
+library(survival)
+library(km.ci)
+
+```
+
+## Objectif de l'étude
+
+***Etudier les facteurs pronostiques chez des patients ayant un dysfonctionnement systolique du ventricule gauche. L'évènement étudié est le décès suite à un arrêt cardiaque***
+
+## Import des données
+
+```{r import, echo = TRUE}
+head(df)
+summary(df)
+#Vérification de l'absence de valeurs manquantes
+nrow(df[is.na(df),])
+#Mise en majuscule des noms de variables
+names(df) = toupper(names(df))
+#Conversion de la créatininémie en ml/min/m² (qui est l'unité internationale)
+df$DFG = 60*df$CREAT
+#Création d'une variable IR qui prend pour valeurs :
+# 0 si pas d'insuffisance rénale (DFG >= 90 ml/min)
+# 1 si insuffisance rénale (DFG < 90 mL/min)
+df$IR = ifelse(df$DFG < 90,1,0)
+#Catégorisation de la variable FEVG :
+df$FRACTIONCAT = ifelse(df$FRACTION <= 30,0,
+                     ifelse(df$FRACTION <= 45,1,2))
+```
+
+## Définition des variables
+
+Variables d'identification :
+- ID : identifiant du sujet
+
+Indicateurs d'événements et dates :
+
+- Temps : temps de suivi (jusqu’au décès ou de censure) 
+- DC : indicateur de décès (1= sujet décédé 0=sujet non décédé) 
+
+Variable d'intérêt principale :
+
+- Fraction : la fraction d'éjection ventriculaire gauche (catégorisable en  ≤ 30, 30 < ≤ 45 et > 45),
+
+Variables d'ajustement (connues de la littérature, à justifier) :
+
+- Sexe : hommes=1 ; femmes=2
+- Age : âge en année
+- Tabac : 1 =fumeur, 0 = non fumeur
+- Diabete : 0 =  pas de diabète, 1  = Diabète
+- HTA : 0 = pas d’hypertension, 1= présence d’hypertension. 
+- Anémie : 1 = présence d’une anémie, 0 = pas d’anémie.
+- Sodium : natrémie, concentration de sodium dans le plasma en mmol/L
+- Creat : la clairance rénale de la créatinine en mL/s (peut être dichotomisée en ≤ 1,5 mL/s , seuil d’une insuffisance rénale oui ou non)
+- Creatk : la créatine kinase en UI/L.
+
+```{r}
+
+df$SEXE <- as.factor(df$SEXE)
+df$TABAC <- as.factor(df$TABAC)
+df$HTA <- as.factor(df$HTA)
+df$DIABETE <- as.factor(df$DIABETE)
+df$ANEMIE <- as.factor(df$ANEMIE)
+df$IR <- as.factor(df$IR)
+df$FRACTIONCAT <- as.factor(df$FRACTIONCAT)
+
+```
+
+```{r}
+df$FRACTIONCAT <- factor(df$FRACTIONCAT, levels = c("0","1","2"), labels = c("1","2","3"))
+
+```
+
+
+```{r}
+df$TABAC <- factor(df$TABAC, levels = c("0","1"), labels = c("1","2"))
+```
+
+
+```{r}
+df$HTA <- factor(df$HTA, levels = c("0","1"), labels = c("1","2"))
+```
+
+```{r}
+df$DIABETE <- factor(df$DIABETE, levels = c("0","1"), labels = c("1","2"))
+```
+
+```{r}
+df$ANEMIE <- factor(df$ANEMIE, levels = c("0","1"), labels = c("1","2"))
+```
+
+```{r}
+df$IR <- factor(df$IR, levels = c("0","1"), labels = c("1","2"))
+```
+
+## Définition des délais et événements
+
+Les temps et événements sont définis ainsi :
+
+- L'origine est l'inclusion dans l'étude (J1 de l'hospitalisation), considérée comme étant le jour de l'AC
+- L'événement d'intérêt est le décès
+- Le délai d'intérêt est le délai de décès après AC
+
+Dans le jeu de données, aucun sujet n'a été inclus après l'exposition. Il n'y a donc pas de troncature à gauche.
+
+## Estimation de la fonction de survie
+
+
+
+### Test de l'homogénéité des courbes de survie
+
+
+On en conclut qu'il existe une différence significative des fonctions de survie entre les groupes de fraction d'éjection.
+
+Néanmoins cette estimation n'est pas ajustée sur les autres facteurs. Pour prendre en compte l'effet de différentes variables explicatives, on propose l'utilisation d'un modèle semi-paramétrique de Cox.
+
+## Modèle de Cox
+
+```{r cox, echo=TRUE}
+#Estimation d'un modèle de Cox. Résolution des ex-aequo par méthode exacte.
+cox = coxph(Surv(TEMPS,DC)~
+        FRACTIONCAT
+      + AGE
+      + SODIUM
+      + SEXE
+      + TABAC
+      + HTA
+      + DIABETE
+      + ANEMIE
+      + IR
+      + CREATK,
+      data=df,
+      ties = "exact")
+summary(cox)
+ ```
+
+
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+```{r cox, echo=TRUE}
+
+
+cox_unitabac = coxph(Surv(TEMPS,DC)~
+        FRACTIONCAT
+      + AGE
+      + SEXE
+      + SODIUM
+      + TABAC,
+      data=df,
+      ties = "exact")
+
+summary(cox_unitabac)
+
+```
+Nous observons d'après le test de Wald effectué que le paramètre de régression associé à la variable Tabac, ajusté sur l'age le sexe et le sodium n'est pas significativement différent de 0.
+
+```{r cox, echo=TRUE}
+
+
+cox_uniHTA = coxph(Surv(TEMPS,DC)~
+        FRACTIONCAT
+      + AGE
+      + SEXE
+      + SODIUM
+      + HTA,
+      data=df,
+      ties = "exact")
+
+summary(cox_uniHTA)
+
+```
+Nous observons d'après le test de Wald effectué que le paramètre de régression associé à la variable HTA, ajusté sur l'age le sexe et le sodium est significativement différent de 0, positif et donc entraîne une hausse du risque instantané de décès.
+
+
+```{r cox, echo=TRUE}
+
+
+cox_uniDIABETE = coxph(Surv(TEMPS,DC)~
+        FRACTIONCAT
+      + AGE
+      + SEXE
+      + SODIUM
+      + DIABETE,
+      data=df,
+      ties = "exact")
+
+summary(cox_uniDIABETE)
+
+```
+
+Le paramètre de régression de la variable diabète n'est pas significativement différent de 0 d'après le test de Wald effectué, il n'apparait pas ici qu'il y ait un lien statistique entre le diabète et le risque instantané de décéder chez aus sein de cette cohorte.
+
+
+
+```{r cox, echo=TRUE}
+
+
+cox_unianemie = coxph(Surv(TEMPS,DC)~
+        FRACTIONCAT
+      + AGE
+      + SEXE
+      + SODIUM
+      + ANEMIE,
+      data=df,
+      ties = "exact")
+
+summary(cox_unianemie)
+
+```
+
+Le paramètre de régression associé à la variable anémie n'est pas significativement différent de 0 d'après le test de Wald, l'anémie ne semble donc pas avoir de lien statistique avec le risque instantané de décéder au sein de cette cohorte.
+
+
+
+
+```{r cox, echo=TRUE}
+
+
+cox_uniIR = coxph(Surv(TEMPS,DC)~ AGE
+                  + SEXE
+                  + SODIUM
+                  + IR,
+                  data=df,
+                  ties = "exact")
+
+summary(cox_uniIR)
+
+```
+
+Le paramètre de régression associé à l'insuffisance rénale apparaît comme étant associé ......
+
+
+
