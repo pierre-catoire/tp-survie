@@ -12,6 +12,14 @@ author:
   <b> 💗 Etude des facteurs pronostiques de survie chez des sujets ayant un dysfonctionnement systolique du ventricule gauche 💗</b>
  </p align>
 
+## Population :
+
+- N= 299 sujets ayant un dysfonctionnement systolique du ventricule gauche.
+
+## Objectif :
+
+- Etudier les facteurs pronostiques chez des patients ayant un dysfonctionnement systolique du ventricule gauche. L'évènement étudié est le décès suite à un arrêt cardiaque
+
 ## Ressources
 
 - polycopié : Analyse de données de survie avec R 📑
