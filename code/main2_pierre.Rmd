@@ -1,0 +1,339 @@
+---
+title: "TP - Analyse de données de survie"
+author:
+- Thao Uyen Vu
+- Alexandre Kaci
+- Pierre Catoire
+date: "13/10/2021"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(survival)
+library(km.ci)
+library(kableExtra)
+library(GGally)
+
+#Crée une fonction qui à partir d'une variable et d'un type : quantitatif normal ou non,
+# renvoie :
+# - si la variable est qualitative ("ql"): l'effectif et le pourcentage
+# - si la variable est quantitative normale ("qtn"): la moyenne et l'écart-type
+# - si la variable est quantitative non normale ("qtnn"): la médiane et l'écart interquartile
+
+desc=function(var,type){
+  if(type=="qtn"){
+    rtn = c(round(mean(var),2),paste("±",round(sd(var),2),sep=""))
+  }
+  else if(type=="qtnn"){
+    rtn = c(median(var),paste("[",quantile(var,0.25),"-",quantile(var,0.75),"]"))
+  }
+  else if(type=="ql"){
+    rtn = c(nrow(var),paste(100*round(c(nrow(var)/nrow(df)),4)),"%",sep="")
+  }
+  else{
+    stop("Le type est mal spécifié")
+  }
+  return(rtn)
+}
+```
+
+## Objectif de l'étude
+
+***Etudier les facteurs pronostiques chez des patients ayant un dysfonctionnement systolique du ventricule gauche. L'évènement étudié est le décès suite à un arrêt cardiaque***
+
+## Import des données
+
+```{r import, echo = TRUE}
+df = read.delim("asset/projet3.txt")
+
+#Visualisation des premières lignes et synthèse des variables
+head(df)
+summary(df)
+
+#Vérification de l'absence de valeurs manquantes
+nrow(df[is.na(df),])
+
+#Mise en majuscule des noms de variables
+names(df) = toupper(names(df))
+
+#Conversion de la créatininémie en ml/min/m² (qui est l'unité internationale)
+df$DFG = 60*df$CREAT
+
+#Création d'une variable IR qui prend pour valeurs :
+# 0 si pas d'insuffisance rénale (DFG >= 90 ml/min)
+# 1 si insuffisance rénale (DFG < 90 mL/min)
+df$IR = ifelse(df$DFG < 90,1,0)
+
+#Catégorisation de la variable FEVG : 0 si FEVG > 45, 1 si FEVG 30-45, 2 si < 30
+df$FRACTIONCAT = ifelse(df$FRACTION >= 45,0,
+                     ifelse(df$FRACTION >= 30,1,2))
+
+#Catégorisation avec FEVG sévère étant donné la présence probable d'un effet seuil
+df$FEVGSEVERE = ifelse(df$FRACTIONCAT == 2,1,0)
+```
+
+## Définition des variables
+
+Variables d'identification :
+- ID : identifiant du sujet
+
+Indicateurs d'événements et dates :
+
+- Temps : temps de suivi (jusqu’au décès ou de censure) 
+- DC : indicateur de décès (1= sujet décédé 0=sujet non décédé) 
+
+Variable d'intérêt principale :
+
+- Fraction : la fraction d'éjection ventriculaire gauche (catégorisable en  ≤ 30, 30-45 et > 45),
+
+Variables d'ajustement (connues de la littérature, à justifier) :
+
+- Sexe : hommes=1 ; femmes=2
+- Age : âge en année
+- Tabac : 1 =fumeur, 0 = non fumeur
+- Diabete : 0 =  pas de diabète, 1  = Diabète
+- HTA : 0 = pas d’hypertension, 1= présence d’hypertension. 
+- Anémie : 1 = présence d’une anémie, 0 = pas d’anémie.
+- Sodium : natrémie, concentration de sodium dans le plasma en mmol/L
+- Creat : la clairance rénale de la créatinine en mL/s (peut être dichotomisée en ≤ 1,5 mL/s , seuil d’une insuffisance rénale oui ou non)
+- Creatk : la créatine kinase en UI/L.
+
+## Analyse descriptive
+
+```{r}
+varnames = c("Âge (moyenne, écart-type)",
+             "Tabagisme (N,%)",
+             "Diabète (N,%)",
+             "Hypertension artérielle (N,%)",
+             "Anémie (N,%)",
+             "Natrémie (médiane, EIQ*)",
+             "Débit de Filtration Glomérulaire (mL/min) (médiane, EIQ*)",
+             "Insuffisance rénale (N,%)",
+             "Créatinine kinase (UI/L) (médiane, EIQ*)",
+             "Fraction d'éjection du ventricule gauche :",
+             " - > 45% (N, %)",
+             " - 30-45% (N, %)",
+             " - ≤30% (N, %)"
+             )
+
+c_pos = c(desc(df$AGE,"qtn")[1],
+          desc(df[df$TABAC==1,],"ql")[1],
+          desc(df[df$DIABETE==1,],"ql")[1],
+          desc(df[df$HTA==1,],"ql")[1],
+          desc(df[df$ANEMIE==1,],"ql")[1],
+          desc(df$SODIUM,"qtnn")[1],
+          desc(df$DFG,"qtnn")[1],
+          desc(df[df$IR==1,],"ql")[1],
+          desc(df$CREATK,"qtnn")[1],
+          "",
+          desc(df[df$FRACTIONCAT==0,],"ql")[1],
+          desc(df[df$FRACTIONCAT==1,],"ql")[1],
+          desc(df[df$FRACTIONCAT==2,],"ql")[1])
+
+c_disp = c(desc(df$AGE,"qtn")[2],
+          desc(df[df$TABAC==1,],"ql")[2],
+          desc(df[df$DIABETE==1,],"ql")[2],
+          desc(df[df$HTA==1,],"ql")[2],
+          desc(df[df$ANEMIE==1,],"ql")[2],
+          desc(df$SODIUM,"qtnn")[2],
+          desc(df$DFG,"qtnn")[2],
+          desc(df[df$IR==1,],"ql")[2],
+          desc(df$CREATK,"qtnn")[2],
+          "",
+          desc(df[df$FRACTIONCAT==0,],"ql")[2],
+          desc(df[df$FRACTIONCAT==1,],"ql")[2],
+          desc(df[df$FRACTIONCAT==2,],"ql")[2])
+
+desc_df = data.frame(varnames,c_pos,c_disp)
+
+kbl = kable(desc_df,
+            col.names = c("Variable","",""),
+            align = "lcc")
+kbl = kable_classic(kbl,full_width = T)
+footnote(kbl, general ="*Ecart inter-quartile")
+```
+## Définition des délais et événements
+
+Les temps et événements sont définis ainsi :
+
+- L'origine est l'inclusion dans l'étude (J1 de l'hospitalisation), considérée comme étant le jour de l'AC
+- L'événement d'intérêt est le décès
+- Le délai d'intérêt est le délai de décès après AC
+
+Dans le jeu de données, aucun sujet n'a été inclus après l'exposition. Il n'y a donc pas de troncature à gauche.
+
+## Estimation de la fonction de survie
+
+### Estimation générale
+
+```{r km1, echo=TRUE}
+#Création d'un estimateur de Kaplan-Meier : délai = temps, indicateur d'événement = décès
+km1 = survfit(Surv(TEMPS,DC)~1,
+              data=df,type="kaplan-meier")
+
+#Utilisation des intervalles de confiance de Rothman, comme proposé dans le polycopié
+ggsurv(km1,
+       plot.cens=F) +
+  theme_bw() +
+  theme(axis.line = element_line(colour = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank())+
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))
+```
+
+```{r km2, echo=TRUE}
+#Création d'un estimateur de Kaplan-Meier : délai = temps, indicateur d'événement = décès
+km2 = survfit(Surv(TEMPS,DC)~FRACTIONCAT,
+              data=df,type="kaplan-meier")
+
+ggsurv(km2,
+       plot.cens = F) +
+  theme_bw() +
+  theme(axis.line = element_line(colour = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank())  +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))
+```
+
+?? Intérêt d'un estimateur de Nelson-Aalen ?
+
+?? Utilisation des intervalles de confiance de Rothman, comme proposé dans le polycopié ?
+
+### Test de l'homogénéité des courbes de survie : à garder ??
+
+On utilise un test du log-rank pour tester l'homogénéité des fonctions de survie entre les groupes de fraction d'éjection :
+
+```{r logrank, echo=TRUE}
+survdiff(Surv(TEMPS,DC)~FRACTIONCAT,data=df)
+```
+
+On en conclut qu'il existe une différence significative des fonctions de survie entre les groupes de fraction d'éjection.
+
+Néanmoins cette estimation n'est pas ajustée sur les autres facteurs. Pour prendre en compte l'effet de différentes variables explicatives, on propose l'utilisation d'un modèle semi-paramétrique de Cox.
+
+## Modèle de Cox
+
+### Etude univariée
+
+```{r}
+#Garder Sodium dans les variables ?
+cox_unifevg = coxph(Surv(TEMPS,DC)~
+                        AGE
+                      + SEXE
+                      + factor(FRACTIONCAT),
+      data=df,
+      ties = "exact")
+
+cox_uni_fesevere = coxph(Surv(TEMPS,DC)~ FEVGSEVERE,
+                         data=df,
+                         ties = "exact")
+
+cox_unitabac = coxph(Surv(TEMPS,DC)~TABAC,
+                     data=df,
+                     ties = "exact")
+
+cox_uniHTA = coxph(Surv(TEMPS,DC)~HTA,
+                   data=df,
+                   ties = "exact")
+
+cox_uniDIABETE = coxph(Surv(TEMPS,DC)~DIABETE,
+                      data=df,
+                      ties = "exact")
+
+cox_unianemie = coxph(Surv(TEMPS,DC)~ANEMIE,
+                      data=df,
+                      ties = "exact")
+
+cox_uniIR = coxph(Surv(TEMPS,DC)~IR,
+                  data=df,
+                  ties = "exact")
+
+cox_uniSODIUM = coxph(Surv(TEMPS,DC)~SODIUM
+                      + AGE
+                      + SEXE
+                      + FEVGSEVERE,
+                      data=df,
+                      ties = "exact")
+
+cox_uniCPK = coxph(Surv(TEMPS,DC)~CREATK,
+                   data=df,
+                   ties = "exact")
+
+summary(cox_unifevg)
+summary(cox_uni_fesevere)
+summary(cox_unitabac)
+summary(cox_uniHTA)
+summary(cox_uniDIABETE)
+summary(cox_unianemie)
+summary(cox_uniIR)
+summary(cox_uniSODIUM)
+summary(cox_uniCPK)
+```
+
+D'après l'analyse univariée, les variables explicatives ayant un effet significatif sur le risque de décès sont :
+
+- La fraction d'éjection
+- L'hypertension artérielle
+- L'insuffisance rénale
+- La natrémie
+
+### Stratification sur la FEVG
+
+```{r}
+cox_uniIR_FE_sev = coxph(Surv(TEMPS,DC)~ AGE
+                           + SEXE
+                           + IR,
+      data=df[df$FRACTIONCAT == 2,],
+      ties = "exact")
+
+cox_uniIR_FE_mod = coxph(Surv(TEMPS,DC)~ AGE
+                           + SEXE
+                           + IR,
+      data=df[df$FRACTIONCAT == 1,],
+      ties = "exact")
+
+cox_uniIR_FE_leg = coxph(Surv(TEMPS,DC)~ AGE
+                           + SEXE
+                           + IR,
+      data=df[df$FRACTIONCAT == 0,],
+      ties = "exact")
+
+summary(cox_uniIR_FE_sev)
+summary(cox_uniIR_FE_mod)
+summary(cox_uniIR_FE_leg)
+```
+
+## Modèle de Cox
+
+```{r cox, echo=TRUE}
+#Estimation d'un modèle de Cox. Résolution des ex-aequo par méthode exacte.
+cox = coxph(Surv(TEMPS,DC)~
+              AGE
+            + SEXE
+            + FEVGSEVERE
+            + HTA
+            + IR
+            + SODIUM
+            + ANEMIE
+            + CREATK
+            #+ FEVGSEVERE*SODIUM
+            + FEVGSEVERE*IR,
+            #+ IR*SODIUM,
+            data=df,
+            ties = "exact")
+
+summary(cox)
+```
+
+### Stratification
+
+### Variables dépendantes du temps
+Aucune variable n'a été mesurée au cours du suivi. Donc il n'y a pas de variables dépendantes du temps.
+
+### Proportionnalité des risques
