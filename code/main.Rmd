@@ -20,7 +20,7 @@ library(GGally)
 # renvoie :
 # - si la variable est qualitative ("ql"): l'effectif et le pourcentage
 # - si la variable est quantitative normale ("qtn"): la moyenne et l'écart-type
-# - si la variable est quantitative non normale ("qtnn"): la médiane et l'écart interquartile
+# - si la variable est quan titative non normale ("qtnn"): la médiane et l'écart interquartile
 
 desc=function(var,type){
   if(type=="qtn"){
@@ -46,7 +46,7 @@ desc=function(var,type){
 ## Import des données
 
 ```{r import, echo = TRUE}
-df = read.delim("asset/projet3.txt")
+df = read.delim("projet3.txt")
 
 #Visualisation des premières lignes et synthèse des variables
 head(df)
@@ -89,9 +89,11 @@ Variables d'ajustement (connues de la littérature, à justifier) :
 
 - Sexe : hommes=1 ; femmes=2
 - Age : âge en année
+
+Variables explicatives
 - Tabac : 1 =fumeur, 0 = non fumeur
 - Diabete : 0 =  pas de diabète, 1  = Diabète
-- HTA : 0 = pas d’hypertension, 1= présence d’hypertension. 
+- HTA : 0 = pas d’hypertension, 1= présence d’hypertension.
 - Anémie : 1 = présence d’une anémie, 0 = pas d’anémie.
 - Sodium : natrémie, concentration de sodium dans le plasma en mmol/L
 - Creat : la clairance rénale de la créatinine en mL/s (peut être dichotomisée en ≤ 1,5 mL/s , seuil d’une insuffisance rénale oui ou non)
@@ -233,4 +235,13 @@ cox = coxph(Surv(TEMPS,DC)~
       ties = "exact")
 
 summary(cox)
+
+cox_uni = coxph(Surv(TEMPS,DC)~
+        FRACTIONCAT
+      + AGE
+      + SEXE
+      + SODIUM,
+      data=df,
+      ties = "exact")
+
  ```
