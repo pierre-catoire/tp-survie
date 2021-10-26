@@ -41,3 +41,10 @@ author:
 - Etapes du code :
   -  nettoyage des données, valeurs manquantes ...
   -  recodage
+
+
+## A faire :
+
+- Alex : résidus
+- Thao Uyen : matériel et méthodes et résultats
+- Pierre : Abstract, intro, discussion
