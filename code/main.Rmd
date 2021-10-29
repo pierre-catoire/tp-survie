@@ -218,30 +218,80 @@ Néanmoins cette estimation n'est pas ajustée sur les autres facteurs. Pour pre
 
 ## Modèle de Cox
 
+### Analyse univariée
+
 ```{r cox, echo=TRUE}
-#Estimation d'un modèle de Cox. Résolution des ex-aequo par méthode exacte.
-cox = coxph(Surv(TEMPS,DC)~
-        FRACTIONCAT
-      + AGE
-      + SODIUM
-      + SEXE
-      + TABAC
-      + HTA
-      + DIABETE
-      + ANEMIE
-      + IR
-      + CREATK,
+cox_unifevg = coxph(Surv(TEMPS,DC)~
+                        AGE
+                      + SEXE
+                      + factor(FRACTIONCAT),
       data=df,
       ties = "exact")
 
-summary(cox)
-
-cox_uni = coxph(Surv(TEMPS,DC)~
-        FRACTIONCAT
-      + AGE
-      + SEXE
-      + SODIUM,
+cox_uni_fesevere = coxph(Surv(TEMPS,DC)~
+                        AGE
+                      + SEXE
+                      + FEVGSEVERE,
       data=df,
       ties = "exact")
+
+cox_unitabac = coxph(Surv(TEMPS,DC)~
+                        AGE
+                      + SEXE
+                      + TABAC,
+      data=df,
+      ties = "exact")
+
+cox_uniHTA = coxph(Surv(TEMPS,DC)~
+                        AGE
+                      + SEXE
+                      + HTA,
+      data=df,
+      ties = "exact")
+
+cox_uniDIABETE = coxph(Surv(TEMPS,DC)~
+                        AGE
+                      + SEXE
+                      + DIABETE,
+      data=df,
+      ties = "exact")
+
+cox_unianemie = coxph(Surv(TEMPS,DC)~
+                        AGE
+                      + SEXE
+                      + ANEMIE,
+      data=df,
+      ties = "exact")
+
+cox_uniIR = coxph(Surv(TEMPS,DC)~
+                        AGE
+                      + SEXE
+                      + IR,
+      data=df,
+      ties = "exact")
+
+cox_uniSODIUM = coxph(Surv(TEMPS,DC)~
+                      AGE
+                      + SEXE
+                      + SODIUM,
+                      data=df,
+                      ties = "exact")
+
+cox_uniCPK = coxph(Surv(TEMPS,DC)~
+                        AGE
+                      + SEXE
+                      + CREATK,
+      data=df,
+      ties = "exact")
+
+summary(cox_unifevg)
+summary(cox_uni_fesevere)
+summary(cox_unitabac)
+summary(cox_uniHTA)
+summary(cox_uniDIABETE)
+summary(cox_unianemie)
+summary(cox_uniIR)
+summary(cox_uniSODIUM)
+summary(cox_uniCPK)
 
  ```
