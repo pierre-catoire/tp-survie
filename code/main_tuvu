@@ -1,4 +1,4 @@
---
+---
 title: "TP - Analyse de données de survie"
 author:
 - Thao Uyen Vu
@@ -44,7 +44,7 @@ desc=function(var,type){
 ## Import des données
 
 ```{r import, echo = TRUE}
-df = read.delim("projet3.txt")
+df = read.delim("/home/tuvu/Downloads/tp-survie-main (1)/tp-survie-main/code/projet3.txt")
 #Visualisation des premières lignes et synthèse des variables
 head(df)
 summary(df)
@@ -158,9 +158,55 @@ kbl = kable(desc_df,
 kbl = kable_classic(kbl,full_width = T)
 footnote(kbl, general ="*Ecart inter-quartile")
 ```
+## Définition des délais et événements
+
+Les temps et événements sont définis ainsi :
+
+- L'origine est l'inclusion dans l'étude (J1 de l'hospitalisation), considérée comme étant le jour de l'AC
+- L'événement d'intérêt est le décès
+- Le délai d'intérêt est le délai de décès après AC
+
+Dans le jeu de données, aucun sujet n'a été inclus après l'exposition. Il n'y a donc pas de troncature à gauche.
+
+## Estimation de la fonction de survie
+
+### Estimation générale
+
+```{r km1, echo=TRUE}
+#Création d'un estimateur de Kaplan-Meier : délai = temps, indicateur d'événement = décès
+km1 = survfit(Surv(TEMPS,DC)~1,
+              data=df,type="kaplan-meier")
+
+#Utilisation des intervalles de confiance de Rothman, comme proposé dans le polycopié
+ggsurv(km1,
+       plot.cens=F) +
+  theme_bw() +
+  theme(axis.line = element_line(colour = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank())+
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))
+summary(km1)
+```
+
+```{r km2, echo=TRUE}
+#Création d'un estimateur de Kaplan-Meier : délai = temps, indicateur d'événement = décès
+km2 = survfit(Surv(TEMPS,DC)~FRACTIONCAT,
+              data=df,type="kaplan-meier")
+
+ggsurv(km2,
+       plot.cens = F) +
+  theme_bw() +
+  theme(axis.line = element_line(colour = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank())  +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))
+```
 
 ```{r}
-
 df$SEXE <- as.factor(df$SEXE)
 df$TABAC <- as.factor(df$TABAC)
 df$HTA <- as.factor(df$HTA)
@@ -183,41 +229,6 @@ Dans le jeu de données, aucun sujet n'a été inclus après l'exposition. Il n'
 ## Estimation de la fonction de survie
 
 ### Estimation générale
-
-```{r km1, echo=TRUE}
-#Création d'un estimateur de Kaplan-Meier : délai = temps, indicateur d'événement = décès
-km1 = survfit(Surv(TEMPS,DC)~1,
-              data=df,type="kaplan-meier")
-#Utilisation des intervalles de confiance de Rothman, comme proposé dans le polycopié
-ggsurv(km1,
-       plot.cens=F) +
-  theme_bw() +
-  theme(axis.line = element_line(colour = "black"),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    panel.border = element_blank(),
-    panel.background = element_blank())+
-  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))
-```
-
-```{r km2, echo=TRUE}
-#Création d'un estimateur de Kaplan-Meier : délai = temps, indicateur d'événement = décès
-km2 = survfit(Surv(TEMPS,DC)~FRACTIONCAT,
-              data=df,type="kaplan-meier")
-ggsurv(km2,
-       plot.cens = F) +
-  theme_bw() +
-  theme(axis.line = element_line(colour = "black"),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    panel.border = element_blank(),
-    panel.background = element_blank())  +
-  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))
-```
-
-### Test de l'homogénéité des courbes de survie
-
-On utilise un test du log-rank pour tester l'homogénéité des fonctions de survie entre les groupes de fraction d'éjection :
 
 ```{r logrank, echo=TRUE}
 survdiff(Surv(TEMPS,DC)~FRACTIONCAT,data=df)
@@ -297,8 +308,8 @@ summary(cox_uniIR)
 summary(cox_uniSODIUM)
 summary(cox_uniCPK)
 ```
-### Analyse multivarié
 
+### Analyse multivarié
 ```{r}
 cox = coxph(Surv(TEMPS,DC)~
               AGE
@@ -314,4 +325,3 @@ cox = coxph(Surv(TEMPS,DC)~
             ties = "exact")
 summary(cox)
 ```
-
